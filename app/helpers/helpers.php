@@ -217,14 +217,34 @@ function removeZeroWidthSpaces($text) {
 }
 
 function formatDateInRow(&$dataArray) {
-    if (empty($dataArray['datePublished'])) return; 
+    if (empty($dataArray['datePublished'])) return;
 
     $dirtyDate = $dataArray['datePublished'];
-    $dateTime = DateTime::createFromFormat(\OJSXml\Config::get("dateFormat"), $dirtyDate);
-	if(! $dateTime){
-			throw new Exception("Unexpected Date Format used in CSV file. Modify the dateFormat in the config.ini file to the same format that is used in the csv file. Failed Date:" . htmlspecialchars($dirtyDate));
-	 }
-    $sanitizedDate = $dateTime->format("Y-m-d");
+
+    // Array of possible date formats
+    $dateFormats = [
+        'F j, Y',
+        'Y-m-d',
+        'm/d/Y',
+        'd/m/Y',
+        // Add more formats as needed
+    ];
+
+    $sanitizedDate = null;
+
+    foreach ($dateFormats as $format) {
+        $dateTime = DateTime::createFromFormat($format, $dirtyDate);
+        if ($dateTime !== false) {
+            $sanitizedDate = $dateTime->format('Y-m-d');
+            break;
+        }
+    }
+
+    if ($sanitizedDate === null) {
+        // Handle the case where the date cannot be parsed using any format
+        return;
+    }
+
     $dataArray['datePublished'] = $sanitizedDate;
 }
 
